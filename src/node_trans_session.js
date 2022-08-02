@@ -43,9 +43,15 @@ class NodeTransSession extends EventEmitter {
     if (this.conf.hls) {
       this.conf.hlsFlags = this.conf.hlsFlags ? this.conf.hlsFlags : '';
       let hlsFileName = 'index.m3u8';
-      let mapHls = `${this.conf.hlsFlags}${ouPath}/${hlsFileName}|`;
-      mapStr += mapHls;
+      let hlsFilePath = `${ouPath}/${hlsFileName}`;
+      let argv = ['-y', '-i', inPath];
+      mkdirp.sync(ouPath);
       Logger.log('[Transmuxing HLS] ' + this.conf.streamPath + ' to ' + ouPath + '/' + hlsFileName);
+      Array.prototype.push.apply(argv, ['-c:v', vc]);
+      Array.prototype.push.apply(argv, this.conf.vcParam);
+      Array.prototype.push.apply(argv, ['-c:a', ac]);
+      Array.prototype.push.apply(argv, this.conf.acParam);
+      Array.prototype.push.apply(argv, ['-f', 'hls', hlsFilePath]);
     }
     if (this.conf.dash) {
       this.conf.dashFlags = this.conf.dashFlags ? this.conf.dashFlags : '';
@@ -54,13 +60,6 @@ class NodeTransSession extends EventEmitter {
       mapStr += mapDash;
       Logger.log('[Transmuxing DASH] ' + this.conf.streamPath + ' to ' + ouPath + '/' + dashFileName);
     }
-    mkdirp.sync(ouPath);
-    let argv = ['-y', '-i', inPath];
-    Array.prototype.push.apply(argv, ['-c:v', vc]);
-    Array.prototype.push.apply(argv, this.conf.vcParam);
-    Array.prototype.push.apply(argv, ['-c:a', ac]);
-    Array.prototype.push.apply(argv, this.conf.acParam);
-    Array.prototype.push.apply(argv, ['-f', 'tee', '-map', '0:a?', '-map', '0:v?', mapStr]);
     argv = argv.filter((n) => { return n; }); //去空
     this.ffmpeg_exec = spawn(this.conf.ffmpeg, argv);
     this.ffmpeg_exec.on('error', (e) => {
