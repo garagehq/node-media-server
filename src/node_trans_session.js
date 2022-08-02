@@ -23,6 +23,7 @@ class NodeTransSession extends EventEmitter {
     let inPath = 'rtmp://127.0.0.1:' + this.conf.rtmpPort + this.conf.streamPath;
     let ouPath = `${this.conf.mediaroot}/${this.conf.streamApp}/${this.conf.streamName}`;
     let mapStr = '';
+    let hlsFilePath = '';
 
     if (this.conf.rtmp && this.conf.rtmpApp) {
       if (this.conf.rtmpApp === this.conf.streamApp) {
@@ -43,15 +44,10 @@ class NodeTransSession extends EventEmitter {
     if (this.conf.hls) {
       this.conf.hlsFlags = this.conf.hlsFlags ? this.conf.hlsFlags : '';
       let hlsFileName = 'index.m3u8';
-      let hlsFilePath = `${ouPath}/${hlsFileName}`;
-      let argv = ['-y', '-i', inPath];
-      mkdirp.sync(ouPath);
+      let mapHls = `${this.conf.hlsFlags}${ouPath}/${hlsFileName}|`;
+      hlsFilePath = `${ouPath}/${hlsFileName}`;
+      mapStr += mapHls;
       Logger.log('[Transmuxing HLS] ' + this.conf.streamPath + ' to ' + ouPath + '/' + hlsFileName);
-      Array.prototype.push.apply(argv, ['-c:v', vc]);
-      Array.prototype.push.apply(argv, this.conf.vcParam);
-      Array.prototype.push.apply(argv, ['-c:a', ac]);
-      Array.prototype.push.apply(argv, this.conf.acParam);
-      Array.prototype.push.apply(argv, ['-f', 'hls', hlsFilePath]);
     }
     if (this.conf.dash) {
       this.conf.dashFlags = this.conf.dashFlags ? this.conf.dashFlags : '';
@@ -60,6 +56,13 @@ class NodeTransSession extends EventEmitter {
       mapStr += mapDash;
       Logger.log('[Transmuxing DASH] ' + this.conf.streamPath + ' to ' + ouPath + '/' + dashFileName);
     }
+    mkdirp.sync(ouPath);
+    let argv = ['-y', '-i', inPath];
+    Array.prototype.push.apply(argv, ['-c:v', vc]);
+    Array.prototype.push.apply(argv, this.conf.vcParam);
+    Array.prototype.push.apply(argv, ['-c:a', ac]);
+    Array.prototype.push.apply(argv, this.conf.acParam);
+    Array.prototype.push.apply(argv, ['-f', 'hls', hlsFilePath]);
     argv = argv.filter((n) => { return n; }); //去空
     this.ffmpeg_exec = spawn(this.conf.ffmpeg, argv);
     this.ffmpeg_exec.on('error', (e) => {
