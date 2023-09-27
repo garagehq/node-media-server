@@ -63,7 +63,7 @@ class NodeMediaServer {
       Logger.error('uncaughtException', err);
     });
 
-    process.on('SIGINT', function() {
+    process.on('SIGINT', function () {
       process.exit();
     });
 
@@ -105,6 +105,10 @@ class NodeMediaServer {
     if (this.nfs) {
       this.nfs.stop();
     }
+  }
+
+  getSessions() {
+    return context.sessions;
   }
 
   getSession(id) {
